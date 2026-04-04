@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "../../style.css";
+
+/* Override Tailwind's defaults that might conflict with our design system */
+@layer base {
+  /* Our design system handles all base styles via style.css */
+  /* Tailwind is available for utility classes if needed */
+}

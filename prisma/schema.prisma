@@ -1,0 +1,174 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+// ============ MODELS ============
+
+model Category {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  slug        String         @unique
+  description String?
+  color       String         // Hex color for UI
+  icon        String?        // SVG or icon name
+  toolCount   Int            @default(0)
+  sortOrder   Int            @default(0)
+  parentId    String?
+  parent      Category?      @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]     @relation("CategoryHierarchy")
+  tools       ToolCategory[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([sortOrder])
+}
+
+model Tool {
+  id               String         @id @default(cuid())
+  slug             String         @unique
+  name             String
+  description      String
+  longDescription  String?
+  pricingType      String         @default("freemium")
+  pricingMin       Float?
+  pricingMax       Float?
+  pricingDetails   String?
+  ratingOverall    Float?
+  ratingCount      Int            @default(0)
+  url              String
+  documentationUrl String?
+  githubUrl        String?
+  iconUrl          String?
+  screenshots      String?          // Array of URLs
+  features         String           @default("[]") // Array of strings
+  verified         Boolean        @default(false)
+  source           String         @default("manual")
+  sourceUrl        String?
+  submittedById    String?
+  submittedBy      User?          @relation(fields: [submittedById], references: [id])
+  categories       ToolCategory[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([name])
+  @@index([verified])
+  @@index([createdAt])
+  @@index([pricingType])
+  @@index([ratingOverall])
+}
+
+model ToolCategory {
+  toolId     String
+  categoryId String
+  tool       Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([toolId, categoryId])
+  @@index([categoryId])
+}
+
+model BenchmarkModel {
+  id            String                  @id @default(cuid())
+  name          String                  @unique
+  provider      String
+  releaseDate   DateTime
+  contextWindow Int
+  pricingInput  Float                   // $/1M tokens
+  pricingOutput Float                   // $/1M tokens
+  scores        String                    // { overall, coding, reasoning, creative, multimodal, math, knowledge }
+  metadata      String?                   // { lastUpdated, sources, notes }
+  history       BenchmarkScoreHistory[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@index([provider])
+  @@index([releaseDate])
+}
+
+model BenchmarkScoreHistory {
+  id          Int            @id @default(autoincrement())
+  benchmarkId String
+  benchmark   BenchmarkModel @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  capturedAt  DateTime       @default(now())
+  scores      String
+  sourceUrls  String?
+
+  @@index([benchmarkId, capturedAt])
+}
+
+model NewsArticle {
+  id            String       @id @default(cuid())
+  title         String
+  slug          String       @unique
+  excerpt       String
+  content       String       // Markdown
+  category      String
+  tags          String         @default("[]") // Array of strings
+  featuredImage String?
+  readTime      Int          // Minutes
+  status        String       @default("draft")
+  publishedAt   DateTime?
+  authorName    String
+  authorAvatar  String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([category])
+}
+
+model NewsletterSubscriber {
+  id             String             @id @default(cuid())
+  email          String             @unique
+  subscribedAt   DateTime           @default(now())
+  ipAddress      String?
+  source         String             @default("homepage")
+  status         String             @default("active")
+  unsubscribedAt DateTime?
+  token          String             @unique @default(cuid())
+  tokenExpires   DateTime
+
+  @@index([status])
+}
+
+model ToolSubmission {
+  id             String           @id @default(cuid())
+  toolData       String             // Full tool object
+  submitterEmail String
+  submitterName  String?
+  status         String           @default("pending")
+  reviewedById   String?
+  reviewedBy     User?            @relation(fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+  reviewNotes    String?
+  submittedAt    DateTime         @default(now())
+
+  @@index([status])
+  @@index([submittedAt])
+}
+
+model User {
+  id          String           @id @default(cuid())
+  email       String           @unique
+  name        String
+  provider    String
+  providerId  String
+  avatarUrl   String?
+  role        String           @default("user")
+  lastLogin   DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  tools       Tool[]
+  submissions ToolSubmission[]
+
+  @@unique([provider, providerId])
+  @@index([role])
+}
