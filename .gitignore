@@ -30,8 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
 *.db
 *.db-journal
 
@@ -45,4 +50,21 @@ next-env.d.ts
 # agents & internal docs
 .agents/
 
+# generated
 /src/generated/prisma
+
+# vercel (dedup)
+.vercel
+.env*.local
+
+# IDE & editor
+.cursor/
+
+# dev scripts & temp files
+/scripts/
+/evaluate.ts
+/purge*.ts
+/test-*.js
+/test-*.ps1
+/fmhy-*.txt
+src/app/api/test-syncs/

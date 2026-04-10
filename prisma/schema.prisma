@@ -1,25 +1,20 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
-
-
-
-// ============ MODELS ============
 
 model Category {
   id          String         @id @default(cuid())
   name        String         @unique
   slug        String         @unique
   description String?
-  color       String         // Hex color for UI
-  icon        String?        // SVG or icon name
+  color       String
+  icon        String?
   toolCount   Int            @default(0)
   sortOrder   Int            @default(0)
   parentId    String?
@@ -36,8 +31,14 @@ model Tool {
   id               String         @id @default(cuid())
   slug             String         @unique
   name             String
-  description      String
-  longDescription  String?
+  description      String         @db.Text
+  longDescription  String?        @db.Text
+  descriptionSource String        @default("raw")
+  status           String         @default("active")
+  fmhySection      String?
+  lastSyncedAt     DateTime?
+  llmProcessed     Boolean        @default(false)
+  llmCategory      String?
   pricingType      String         @default("freemium")
   pricingMin       Float?
   pricingMax       Float?
@@ -48,8 +49,9 @@ model Tool {
   documentationUrl String?
   githubUrl        String?
   iconUrl          String?
-  screenshots      String?          // Array of URLs
-  features         String           @default("[]") // Array of strings
+  screenshots      String?        @db.Text
+  features         String         @default("[]") @db.Text
+  tags             String         @default("[]") @db.Text
   verified         Boolean        @default(false)
   source           String         @default("manual")
   sourceUrl        String?
@@ -64,6 +66,8 @@ model Tool {
   @@index([createdAt])
   @@index([pricingType])
   @@index([ratingOverall])
+  @@index([status])
+  @@index([source, verified])
 }
 
 model ToolCategory {
@@ -82,10 +86,10 @@ model BenchmarkModel {
   provider      String
   releaseDate   DateTime
   contextWindow Int
-  pricingInput  Float                   // $/1M tokens
-  pricingOutput Float                   // $/1M tokens
-  scores        String                    // { overall, coding, reasoning, creative, multimodal, math, knowledge }
-  metadata      String?                   // { lastUpdated, sources, notes }
+  pricingInput  Float
+  pricingOutput Float
+  scores        String                  @db.Text
+  metadata      String?                 @db.Text
   history       BenchmarkScoreHistory[]
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
@@ -99,8 +103,8 @@ model BenchmarkScoreHistory {
   benchmarkId String
   benchmark   BenchmarkModel @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
   capturedAt  DateTime       @default(now())
-  scores      String
-  sourceUrls  String?
+  scores      String         @db.Text
+  sourceUrls  String?        @db.Text
 
   @@index([benchmarkId, capturedAt])
 }
@@ -109,16 +113,17 @@ model NewsArticle {
   id            String       @id @default(cuid())
   title         String
   slug          String       @unique
-  excerpt       String
-  content       String       // Markdown
+  excerpt       String       @db.Text
+  content       String       @db.Text
   category      String
-  tags          String         @default("[]") // Array of strings
+  tags          String       @default("[]") @db.Text
   featuredImage String?
-  readTime      Int          // Minutes
+  readTime      Int
   status        String       @default("draft")
   publishedAt   DateTime?
   authorName    String
   authorAvatar  String?
+  sourceUrl     String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -127,30 +132,30 @@ model NewsArticle {
 }
 
 model NewsletterSubscriber {
-  id             String             @id @default(cuid())
-  email          String             @unique
-  subscribedAt   DateTime           @default(now())
+  id             String    @id @default(cuid())
+  email          String    @unique
+  subscribedAt   DateTime  @default(now())
   ipAddress      String?
-  source         String             @default("homepage")
-  status         String             @default("active")
+  source         String    @default("homepage")
+  status         String    @default("active")
   unsubscribedAt DateTime?
-  token          String             @unique @default(cuid())
+  token          String    @unique @default(cuid())
   tokenExpires   DateTime
 
   @@index([status])
 }
 
 model ToolSubmission {
-  id             String           @id @default(cuid())
-  toolData       String             // Full tool object
+  id             String    @id @default(cuid())
+  toolData       String    @db.Text
   submitterEmail String
   submitterName  String?
-  status         String           @default("pending")
+  status         String    @default("pending")
   reviewedById   String?
-  reviewedBy     User?            @relation(fields: [reviewedById], references: [id])
+  reviewedBy     User?     @relation(fields: [reviewedById], references: [id])
   reviewedAt     DateTime?
-  reviewNotes    String?
-  submittedAt    DateTime         @default(now())
+  reviewNotes    String?   @db.Text
+  submittedAt    DateTime  @default(now())
 
   @@index([status])
   @@index([submittedAt])

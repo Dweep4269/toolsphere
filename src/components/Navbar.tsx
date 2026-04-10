@@ -1,11 +1,12 @@
 import Link from "next/link";
 import prisma from "@/lib/db";
+import NavLinks from "@/components/NavLinks";
 
 export default async function Navbar() {
   let toolCount = 0;
   try {
     toolCount = await prisma.tool.count();
-  } catch (e) {
+  } catch {
     // Graceful fallback for build time without DB
     toolCount = 832;
   }
@@ -40,26 +41,15 @@ export default async function Navbar() {
         </Link>
 
         <div className="nav-links" id="nav-links">
-          <Link href="#discover" className="nav-link">
-            Discover
-          </Link>
-          <Link href="#categories" className="nav-link">
-            Categories
-          </Link>
-          <Link href="/benchmarks" className="nav-link">
-            Benchmarks
-          </Link>
-          <Link href="#news" className="nav-link">
-            News
-          </Link>
+          <NavLinks />
         </div>
 
         <div className="nav-right">
           <span className="nav-stat">
             <strong>{toolCount}</strong> tools indexed
           </span>
-          <Link href="#submit" className="nav-cta" id="submit-tool-btn">
-            Submit a Tool
+          <Link href="/tools" className="nav-cta" id="browse-tools-btn">
+            Browse Tools
           </Link>
         </div>
       </div>

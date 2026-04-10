@@ -31,7 +31,7 @@ export default function Hero() {
           alternatives, and make informed decisions — whether you&apos;re just
           getting started or building production systems.
         </p>
-        <div className="search-container" id="search-container">
+        <form className="search-container" id="search-container" action="/tools" method="get">
           <svg
             className="search-icon"
             viewBox="0 0 24 24"
@@ -49,11 +49,12 @@ export default function Hero() {
             type="text"
             className="search-input"
             id="search-input"
+            name="q"
             placeholder="Search tools — try 'code editor', 'MCP server', 'voice clone'..."
             autoComplete="off"
           />
           <kbd className="search-kbd">/</kbd>
-        </div>
+        </form>
         <div className="hero-tags">
           {[
             "MCPs",
