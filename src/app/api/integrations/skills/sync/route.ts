@@ -15,10 +15,20 @@ function toSlug(name: string): string {
 
 export async function POST() {
   try {
-    const repos = await searchGitHubRepos("topic:agent-skill OR topic:cursor-skill OR topic:claude-skill", {
+    const skillRepos = await searchGitHubRepos("topic:agent-skill", {
       sort: "stars",
-      perPage: 30,
+      perPage: 20,
     });
+    const cursorRepos = await searchGitHubRepos("topic:cursor-skill", {
+      sort: "stars",
+      perPage: 15,
+    });
+
+    const seen = new Set(skillRepos.map((r) => r.full_name));
+    const repos = [...skillRepos];
+    for (const r of cursorRepos) {
+      if (!seen.has(r.full_name)) repos.push(r);
+    }
 
     const category = await prisma.category.upsert({
       where: { slug: CATEGORY_SLUG },

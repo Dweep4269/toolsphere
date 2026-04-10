@@ -46,10 +46,20 @@ export async function POST() {
 
     const curatedUrls = await fetchCuratedListUrls();
 
-    const repos = await searchGitHubRepos(
-      "topic:mcp-server OR topic:model-context-protocol stars:>5",
-      { sort: "stars", perPage: 50 }
+    const mcpRepos = await searchGitHubRepos(
+      "topic:mcp-server stars:>5",
+      { sort: "stars", perPage: 40 }
     );
+    const protocolRepos = await searchGitHubRepos(
+      "topic:model-context-protocol stars:>5",
+      { sort: "stars", perPage: 20 }
+    );
+
+    const seen = new Set(mcpRepos.map((r) => r.full_name));
+    const repos = [...mcpRepos];
+    for (const r of protocolRepos) {
+      if (!seen.has(r.full_name)) repos.push(r);
+    }
 
     let imported = 0;
     let updated = 0;
