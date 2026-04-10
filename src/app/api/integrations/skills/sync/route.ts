@@ -28,6 +28,8 @@ export async function POST() {
 
     let imported = 0;
     let updated = 0;
+    let readmeFetches = 0;
+    const MAX_README_FETCHES = 10;
     const errors: string[] = [];
 
     for (const repo of repos) {
@@ -43,8 +45,9 @@ export async function POST() {
         const existing = await prisma.tool.findFirst({ where: { url } });
 
         let readmeExcerpt: string | null = null;
-        if (!existing || !existing.longDescription) {
+        if ((!existing || !existing.longDescription) && readmeFetches < MAX_README_FETCHES) {
           readmeExcerpt = await fetchReadmeExcerpt(repo.full_name, 280);
+          readmeFetches++;
         }
 
         const description = repoDescription || readmeExcerpt || "An agent skill for AI-powered development workflows.";
@@ -82,11 +85,11 @@ export async function POST() {
               longDescription: readmeExcerpt,
               descriptionSource: readmeExcerpt ? "github-readme" : "raw",
               githubUrl: url,
-              status: "pending",
+              status: "active",
               source: "github-skills",
-              verified: false,
+              verified: true,
               tags: JSON.stringify(repo.topics?.slice(0, 6) || []),
-              ratingOverall: stars > 500 ? 4.5 : stars > 100 ? 4.0 : stars > 20 ? 3.5 : null,
+              ratingOverall: stars > 500 ? 4.5 : stars > 100 ? 4.0 : stars > 20 ? 3.5 : 3.0,
             },
           });
 

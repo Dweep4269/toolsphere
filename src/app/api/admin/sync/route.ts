@@ -45,45 +45,44 @@ export async function POST(request: Request) {
 
   const baseUrl = getBaseUrl(request);
 
-  const results = await Promise.all(
-    targets.map(async (target) => {
-      const startedAt = Date.now();
-      try {
-        const response = await fetch(`${baseUrl}${SYNC_ENDPOINTS[target]}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            target === "fmhy"
-              ? { limit, sections: body.fmhySections ?? [] }
-              : { limit }
-          ),
-          cache: "no-store",
-        });
+  const results = [];
+  for (const target of targets) {
+    const startedAt = Date.now();
+    try {
+      const response = await fetch(`${baseUrl}${SYNC_ENDPOINTS[target]}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          target === "fmhy"
+            ? { limit, sections: body.fmhySections ?? [] }
+            : { limit }
+        ),
+        cache: "no-store",
+      });
 
-        const durationMs = Date.now() - startedAt;
-        const payload = (await response.json().catch(() => ({}))) as unknown;
+      const durationMs = Date.now() - startedAt;
+      const payload = (await response.json().catch(() => ({}))) as unknown;
 
-        return {
-          target,
-          success: response.ok,
-          status: response.status,
-          durationMs,
-          payload,
-        };
-      } catch (error) {
-        const durationMs = Date.now() - startedAt;
-        return {
-          target,
-          success: false,
-          status: 0,
-          durationMs,
-          payload: {
-            message: error instanceof Error ? error.message : "Unknown error",
-          },
-        };
-      }
-    })
-  );
+      results.push({
+        target,
+        success: response.ok,
+        status: response.status,
+        durationMs,
+        payload,
+      });
+    } catch (error) {
+      const durationMs = Date.now() - startedAt;
+      results.push({
+        target,
+        success: false,
+        status: 0,
+        durationMs,
+        payload: {
+          message: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+    }
+  }
 
   const successCount = results.filter((result) => result.success).length;
 

@@ -53,6 +53,8 @@ export async function POST() {
 
     let imported = 0;
     let updated = 0;
+    let readmeFetches = 0;
+    const MAX_README_FETCHES = 10;
     const errors: string[] = [];
 
     for (const repo of repos) {
@@ -77,8 +79,9 @@ export async function POST() {
         const existing = await prisma.tool.findFirst({ where: { url } });
 
         let readmeExcerpt: string | null = null;
-        if (!existing || !existing.longDescription) {
+        if ((!existing || !existing.longDescription) && readmeFetches < MAX_README_FETCHES) {
           readmeExcerpt = await fetchReadmeExcerpt(repo.full_name, 280);
+          readmeFetches++;
         }
 
         const description =
@@ -119,9 +122,9 @@ export async function POST() {
               longDescription: readmeExcerpt,
               descriptionSource: readmeExcerpt ? "github-readme" : "raw",
               githubUrl: url,
-              status: "pending",
+              status: "active",
               source: "github-mcp",
-              verified: false,
+              verified: true,
               llmCategory: "MCP Server",
               llmProcessed: true,
               tags: JSON.stringify(repo.topics?.slice(0, 6) || []),
@@ -133,7 +136,7 @@ export async function POST() {
                     ? 4.0
                     : stars > 20
                       ? 3.5
-                      : null,
+                      : 3.0,
             },
           });
 
