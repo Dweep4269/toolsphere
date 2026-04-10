@@ -9,7 +9,7 @@ const CATEGORY_SLUG = "foundation-models";
 
 export async function POST() {
   try {
-    const response = await fetch("https://huggingface.co/api/models?sort=trending&limit=50", {
+    const response = await fetch("https://huggingface.co/api/models?sort=likes&direction=-1&limit=50", {
       cache: "no-store",
     });
     if (!response.ok) {
