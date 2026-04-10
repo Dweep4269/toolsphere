@@ -404,5 +404,5 @@ This project is proprietary. All rights reserved.
 ---
 
 <p align="center">
-  <sub>Built with precision by <a href="https://github.com/Dweep4269">@Dweep4269</a></sub>
+  <sub>Built with love</sub>
 </p>
